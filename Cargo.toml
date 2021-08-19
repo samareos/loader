@@ -1,0 +1,36 @@
+[workspace]
+members = [
+  "extensions/edgeless_core",
+  # "extensions/edgeless_core/loader",
+  # "extensions/edgeless_core/found",
+  # "extensions/edgeless_core/features_options",
+
+  "extensions/edgeless_utils",
+
+  "extensions/edgeless_lifecycle",
+  # "extensions/edgeless_lifecycle/core",
+  # "extensions/edgeless_lifecycle/plugin",
+  # "extensions/edgeless_lifecycle/theme",
+  # "extensions/edgeless_lifecycle/hooks",
+
+  "extensions/edgeless_plugin",
+  # "extensions/edgeless_plugin/found",
+  # "extensions/edgeless_plugin/loader",
+  # "extensions/edgeless_plugin/pnp",
+
+  "extensions/edgeless_theme",
+  # "extensions/edgeless_theme/loader",
+  # "extensions/edgeless_theme/loader_loadscreen",
+  # "extensions/edgeless_theme/loader_cursor_style",
+  # "extensions/edgeless_theme/loader_startisback_style",
+  # "extensions/edgeless_theme/loader_icon",
+  # "extensions/edgeless_theme/loader_sys_icon",
+  # "extensions/edgeless_theme/loader_wallpaper",
+  # "extensions/edgeless_theme/loader_preview",
+]
+
+[profile.release]
+codegen-units = 1
+incremental = true
+lto = true
+opt-level = 'z' # Optimize for size

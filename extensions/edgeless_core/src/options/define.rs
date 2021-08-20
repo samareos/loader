@@ -7,12 +7,18 @@ lazy_static! {
 
   pub static ref PATH_OLD_CUSTOM_DISPLAY_RES_OPTIONS: PathBuf = PathBuf::from("分辨率.txt");
   pub static ref PATH_CUSTOM_DISPLAY_RES: PathBuf = PATH_OPTIONS.join("分辨率.txt");
+  pub static ref PATH_CUSTOM_HOME_PAGE: PathBuf = PATH_OPTIONS.join("HomePage.txt");
 
+  pub static ref PATH_CUSTOM_SYSTEM_FILES_FOLDER: PathBuf = PathBuf::from("Windows");
+
+  pub static ref EXT_CUSTOM_SYSTEM_SETUP_IMAGES: Regex = Regex::new("^iso|wim|esd$").unwrap();
+  pub static ref PATH_CUSTOM_SYSTEM_SETUP_IMAGES_FOLDER: PathBuf = PathBuf::from("System"); // ON ANY DISK
+  
   pub static ref PATH_CUSTOM_WALLPAPER: PathBuf = PathBuf::from("wp.jpg");
   pub static ref PATH_CUSTOM_WALLPAPER_BAK: PathBuf = PathBuf::from("wp_backup.jpg");
   pub static ref PATH_EXTERNAL_LAUNCHER: PathBuf = PathBuf::from("Launcher.cmd");
 
-  pub static ref EXT_PLUGIN_PATTERN: Regex = Regex::new("7z.*").unwrap();
+  pub static ref EXT_PLUGIN_PATTERN: Regex = Regex::new("^7z.*$").unwrap();
   pub static ref EXT_PLUGIN_NORMAL: &'static str = "7z";
   pub static ref EXT_PLUGIN_DISABLE: &'static str = "7zf";
   pub static ref EXT_PLUGIN_LOCALBOOST: &'static str = "7zl";
@@ -54,24 +60,36 @@ lazy_static! {
   pub static ref PATH_OPTION_DRV_MOUNT_EVERY_PART: PathBuf = PATH_OPTIONS.join("MountEveryPartition");
   pub static ref PATH_OPTION_DISABLE_LOADSCREEN: PathBuf = PATH_OPTIONS.join("DisableLoadScreen");
   pub static ref PATH_OPTION_DISABLE_PIN_BROWSERS: PathBuf = PATH_OPTIONS.join("DisablePinBrowsers");
+  
 }
 
 #[derive(Debug, Clone)]
 pub enum ProfileOption {
-  AllowExternalLauncher = PATH_OPTION_ALLOW_EXTERNAL_LAUNCHER,
-  IgnoreOutdate = PATH_OPTION_IGNORE_OUTDATE,
-  DisableUSBManager = PATH_OPTION_DISABLE_USB_MANAGER,
-  DisableSmartISO = PATH_OPTION_DISABLE_SMART_ISO,
-  UnfoldRibbon = PATH_OPTION_UNFOLD_RIBBON,
-  RebootDefault = PATH_OPTION_REBOOT_DEFAULT,
-  DisableRecycleBin = PATH_OPTION_DISABLE_RECYCLE_BIN,
-  AutoUnattend = PATH_OPTION_AUTO_UNATTEND,
-  DriveUpActive = PATH_OPTION_DRV_UP_ACT,
-  DriveWindowsFirst = PATH_OPTION_DRV_WIN_FIRST,
-  DriveOrderAnotherWay = PATH_OPTION_DRV_ORDER_ANOTHER,
-  DriveMountEveryPartition = PATH_OPTION_DRV_MOUNT_EVERY_PART,
-  DisableLoadScreen = PATH_OPTION_DISABLE_LOADSCREEN,
-  DisablePinBrowsers = PATH_OPTION_DISABLE_PIN_BROWSERS,
+  /*
+   * w1024 h768 b32 f60
+   * 格式：宽(w) 高(h) 色位(b) 刷新率(f)
+   */
+  CustomDisplayRes(usize, usize, usize, usize),
+
+  /*
+   * (url: String, disable: bool)
+   */
+  CustomHomepageUrl(String, bool),
+
+  AllowExternalLauncher, // = PATH_OPTION_ALLOW_EXTERNAL_LAUNCHER,
+  IgnoreOutdate, // = PATH_OPTION_IGNORE_OUTDATE,
+  DisableUSBManager, // = PATH_OPTION_DISABLE_USB_MANAGER,
+  DisableSmartISO, // = PATH_OPTION_DISABLE_SMART_ISO,
+  UnfoldRibbon, // = PATH_OPTION_UNFOLD_RIBBON,
+  RebootDefault, // = PATH_OPTION_REBOOT_DEFAULT,
+  DisableRecycleBin, // = PATH_OPTION_DISABLE_RECYCLE_BIN,
+  AutoUnattend, // = PATH_OPTION_AUTO_UNATTEND,
+  DriveUpActive, // = PATH_OPTION_DRV_UP_ACT,
+  DriveWindowsFirst, // = PATH_OPTION_DRV_WIN_FIRST,
+  DriveOrderAnotherWay, // = PATH_OPTION_DRV_ORDER_ANOTHER,
+  DriveMountEveryPartition, // = PATH_OPTION_DRV_MOUNT_EVERY_PART,
+  DisableLoadScreen, // = PATH_OPTION_DISABLE_LOADSCREEN,
+  DisablePinBrowsers, // = PATH_OPTION_DISABLE_PIN_BROWSERS,
 }
 
 #[derive(Debug, Clone, Copy)]

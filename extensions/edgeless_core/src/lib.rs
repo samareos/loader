@@ -1,4 +1,5 @@
 pub mod found;
+pub mod options;
 
 #[cfg(test)]
 mod tests {

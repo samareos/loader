@@ -86,7 +86,6 @@ mod tests {
         .is_test(true)
         .try_init();
     }
-  
 
     #[tokio::test]
     async fn it_works() -> anyhow::Result<()> {

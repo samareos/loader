@@ -1,4 +1,4 @@
-use std::{ffi::{OsString}, path::PathBuf, vec};
+use std::{ffi::OsString, path::PathBuf, vec};
 use sysinfo::{DiskExt, DiskType, RefreshKind, System, SystemExt};
 use tokio::fs;
 use edgeless_utils::u8_to_ascii;

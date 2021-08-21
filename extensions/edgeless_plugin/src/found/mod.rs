@@ -70,7 +70,7 @@ impl PluginExtension {
       _ => Self::Unknown,
     };
 
-    info("parsed, {:?}", o);
+    info!("parsed, {:?}", o);
 
     Some(o)
   }
@@ -128,7 +128,7 @@ impl PluginEntry {
           let r = Self::new(
               d.path()
           ).await?;
-          if r.extension != None {
+          if let Some(_) = r.extension {
             plugins.push(r);
           }
         }

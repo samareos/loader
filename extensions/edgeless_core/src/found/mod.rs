@@ -4,6 +4,7 @@ use tokio::fs;
 use edgeless_utils::u8_to_ascii;
 
 use lazy_static::lazy_static;
+use log::{info};
 
 lazy_static! {
   static ref UNKNOWN_FS: String = "UNKNOWN".to_string();
@@ -25,9 +26,11 @@ pub struct ProfileEntry {
 impl ProfileEntry {
   pub async fn find_last() -> anyhow::Result<Option<Self>> {
     let all = Self::find().await?;
+    info!("get last one to return");
     if let Some(last) = all.last() {
       Ok(Some(last.to_owned()))
     } else {
+      info!("not found edgeless profiles");
       Ok(None)
     }
   }
@@ -36,16 +39,19 @@ impl ProfileEntry {
     let sys = System::new_with_specifics(
       RefreshKind::new().with_disks().with_disks_list()
     );
+    info!("refresh disk info");
   
     let mut profiles = vec![];
   
     for i in sys.disks() {
+      info!("scanning disk {:?}", i); 
       if i.mount_point().join(&PROFILE_EXIST_PATH.as_path()).exists() {
+        info!("found disk `{:?}` has edgeless profile", i.mount_point());
         let version_text = 
           fs::read_to_string(i.mount_point().join(&PROFILE_VER_PATH.as_path()))
             .await.unwrap_or(String::new());
   
-        profiles.push(Self {
+        let profile = Self {
           path: i.mount_point().join(&PROFILE_PATH.as_path()),
           version_text,
           mountpoint: i.mount_point().to_path_buf(),
@@ -55,11 +61,14 @@ impl ProfileEntry {
           
           fs: u8_to_ascii(i.file_system())
             .unwrap_or(UNKNOWN_FS.clone()),
-        });
+        };
   
+        info!("profile info: {:#?}", profile);
+
+        profiles.push(profile);
       }
     }
-  
+    info!("get profiles: {:#?}", profiles);
     Ok(profiles)
   }
 }
@@ -68,9 +77,21 @@ impl ProfileEntry {
 mod tests {
     use crate::found::ProfileEntry;
 
+    use log::LevelFilter;
+    use log::debug;
+
+    fn init() {
+      let _ = env_logger::builder()
+        .filter_level(LevelFilter::Debug)
+        .is_test(true)
+        .try_init();
+    }
+  
+
     #[tokio::test]
     async fn it_works() -> anyhow::Result<()> {
-        println!("{:#?}", ProfileEntry::find().await?);
+        init();
+        debug!("{:#?}", ProfileEntry::find().await?);
         Ok(())
     }
 }

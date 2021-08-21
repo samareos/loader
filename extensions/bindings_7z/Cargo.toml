@@ -1,0 +1,11 @@
+[package]
+name = "bindings_7z"
+edition = "2018"
+version = "0.1.0"
+description = "7-zip bindings for Rust"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+log = "0.4"
+env_logger = "0.9"

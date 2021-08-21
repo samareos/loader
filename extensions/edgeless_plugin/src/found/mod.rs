@@ -25,17 +25,25 @@ pub struct PluginMetadata {
 
 impl PluginMetadata {
   pub fn parse(s: &str) -> Option<Self> {
+    info!("try parse {:?} to plugin meta", s);
     let ul_sep = s.split("_").collect::<Vec<_>>();
+    info!("sep = {:?}", ul_sep);
+    info!("sep len = {}", ul_sep.len());
     if ul_sep.len() < 3 || ul_sep.len() > 4 {
+      error!("parse to meta error!");
       return None;
     }
     
-    Some(PluginMetadata {
+    let meta = PluginMetadata {
       name: ul_sep[0].to_string(),
       version: ul_sep[1].to_string(),
       author: ul_sep[2].to_string(),
       category: ul_sep.get(3).map(|s| s.to_string())
-    })
+    };
+
+    info!("parsed, meta = {:#?}", meta);
+
+    Some(meta)
   }
 }
 
@@ -49,23 +57,29 @@ pub enum PluginExtension {
 }
 
 impl PluginExtension {
-  pub fn new(ext: &str) -> Self {
+  pub fn new(ext: &str) -> Option<Self> {
+    info!("parse plugin ext, ext = {:?}", ext);
     if !EXT_PLUGIN_PATTERN.is_match(ext) {
-      return Self::Invaild;
+      warn!("invaild plugin ext");
+      return None;
     }
-    match ext {
+    let o = match ext {
       "7z" => Self::Normal,
       "7zl" => Self::Localboost,
       "7zf" => Self::Disabled,
       _ => Self::Unknown,
-    }
+    };
+
+    info("parsed, {:?}", o);
+
+    Some(o)
   }
 }
 
 #[derive(Debug, Clone)]
 pub struct PluginEntry {
   pub path: PathBuf,
-  pub extension: PluginExtension,
+  pub extension: Option<PluginExtension>,
   pub meta: Option<PluginMetadata>,
   pub filemeta: Metadata,
 }
@@ -96,22 +110,52 @@ impl PluginEntry {
       filemeta: f,
     })
   }
+
+  pub async fn new_from_profile(entry: ProfileEntry) -> anyhow::Result<Vec<Self>> {
+    let res_pb = entry.path.join(PATH_PLUGIN_RESOURCES.clone());
+
+    if !(res_pb.exists() && res_pb.is_dir()) {
+      return Err(anyhow!("not found plugin resource in {:#?}", entry));
+    }
+
+    let mut dir= fs::read_dir(res_pb).await?;
+    let mut plugins = vec![];
+
+    loop {
+      if let Some(d) = dir.next_entry().await? {
+        let meta = d.metadata().await?;
+        if meta.is_file() {
+          let r = Self::new(
+              d.path()
+          ).await?;
+          if r.extension != None {
+            plugins.push(r);
+          }
+        }
+      } else {
+        break;
+      }
+    }
+
+    Ok(plugins)
+  }
 }
 
 #[cfg(test)]
 mod tests {
     use std::{path::PathBuf, str::FromStr};
 
+    use edgeless_core::found::ProfileEntry;
+
     use super::PluginEntry;
 
   #[tokio::test]
   async fn it_works() -> anyhow::Result<()> {
-    let entry = PluginEntry::new(
-      PathBuf::from_str(r"D:\1\Diskgenius专业版_5.2.1.941_Horatio Chow.7z")?
-    ).await?;
-
-    println!("{:#?}", entry);
-
+    let profile = ProfileEntry::find_last().await?;
+    if let Some(profile) = profile {
+      let entries = PluginEntry::new_from_profile(profile).await?;
+      println!("{:#?}", entries);
+    }
     Ok(())
   }
 }

@@ -1,5 +1,8 @@
 [workspace]
 members = [
+  "extensions/bindings_7z",
+  "extensions/bindings_pecmd",
+
   "extensions/edgeless_core",
   # "extensions/edgeless_core/loader",
   # "extensions/edgeless_core/found",

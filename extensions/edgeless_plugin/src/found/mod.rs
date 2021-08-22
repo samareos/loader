@@ -52,8 +52,6 @@ pub enum PluginExtension {
   Normal,
   Localboost,
   Disabled,
-  Unknown,
-  Invaild,
 }
 
 impl PluginExtension {
@@ -67,7 +65,10 @@ impl PluginExtension {
       "7z" => Self::Normal,
       "7zl" => Self::Localboost,
       "7zf" => Self::Disabled,
-      _ => Self::Unknown,
+      _ => {
+        info!("unknown plugin ext, disabled, {:?}", ext);
+        Self::Disabled
+      },
     };
 
     info!("parsed, {:?}", o);
@@ -111,15 +112,16 @@ impl PluginEntry {
     })
   }
 
-  pub async fn new_from_profile(entry: ProfileEntry) -> anyhow::Result<Vec<Self>> {
+  pub async fn from_profile(entry: &ProfileEntry) -> anyhow::Result<Vec<Self>> {
     let res_pb = entry.path.join(PATH_PLUGIN_RESOURCES.clone());
+    let mut plugins = vec![];
 
     if !(res_pb.exists() && res_pb.is_dir()) {
       return Err(anyhow!("not found plugin resource in {:#?}", entry));
     }
 
     let mut dir= fs::read_dir(res_pb).await?;
-    let mut plugins = vec![];
+    
 
     loop {
       if let Some(d) = dir.next_entry().await? {
@@ -153,7 +155,7 @@ mod tests {
   async fn it_works() -> anyhow::Result<()> {
     let profile = ProfileEntry::find_last().await?;
     if let Some(profile) = profile {
-      let entries = PluginEntry::new_from_profile(profile).await?;
+      let entries = PluginEntry::from_profile(&profile).await?;
       println!("{:#?}", entries);
     }
     Ok(())

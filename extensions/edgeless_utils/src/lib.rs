@@ -1,6 +1,18 @@
 use anyhow::anyhow;
 use std::{ffi::{OsString, OsStr}};
 
+use rand::{Rng, thread_rng};
+
+pub async fn rand_uuid() -> anyhow::Result<uuid::Uuid> {
+    let mut rng = thread_rng();
+    Ok(
+        uuid::Builder::from_bytes(rng.gen())
+            .set_version(uuid::Version::Random)
+            .build()
+    )
+        
+}
+
 pub fn u8_to_ascii(c: &[u8]) -> anyhow::Result<String> {
     let mut s = String::new();
     for i in c {

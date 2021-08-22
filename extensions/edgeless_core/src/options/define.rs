@@ -25,6 +25,7 @@ lazy_static! {
   pub static ref EXT_PLUGIN_LOCALBOOST: &'static str = "7zl";
   // pub static ref EXT_PLUGIN_DOTNET: &'static str = "7zn";
   pub static ref PATH_PLUGIN_RESOURCES: PathBuf = PathBuf::from("Resource");
+  pub static ref PATH_PLUGIN_LB_RESOURCES: PathBuf = PathBuf::from("BoostRepo");
 
   pub static ref EXT_THEME_PACK: &'static str = "eth";
   pub static ref EXT_THEME_ICON: &'static str = "eis";

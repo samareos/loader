@@ -6,7 +6,7 @@ use edgeless_utils::u8_to_ascii;
 use lazy_static::lazy_static;
 use log::{info};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProfileType {
   Default,
   BoostRepo,
@@ -71,8 +71,10 @@ impl ProfileEntry {
           fs: u8_to_ascii(i.file_system())
             .unwrap_or(UNKNOWN_FS.clone()),
         };
+
+        let lb = i.mount_point().join(&PROFILE_EXIST_LB_PATH.as_path());
         
-        if i.mount_point().join(&PROFILE_EXIST_LB_PATH.as_path()).exists() {
+        if lb.exists() && lb.is_dir() {
           info!("found localboost filerepo, profile is all type");
           profile.profile_type = ProfileType::All;
         }
@@ -97,7 +99,10 @@ impl ProfileEntry {
     for i in sys.disks() {
       
       info!("scanning disk {:?}", i); 
-      if i.mount_point().join(&PROFILE_EXIST_LB_PATH.as_path()).exists() {
+
+      let lb = i.mount_point().join(&PROFILE_EXIST_LB_PATH.as_path());
+
+      if lb.exists() && lb.is_dir() {
         info!("found disk `{:?}` has edgeless localboost filerepo", i.mount_point());
 
         let profile = Self {

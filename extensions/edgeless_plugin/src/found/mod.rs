@@ -1,6 +1,7 @@
 #![allow(unused_imports)]
+pub mod localboost;
 use std::{ffi::OsString, fs::Metadata, path::{Path, PathBuf}};
-
+use async_recursion::async_recursion;
 use edgeless_core::found::ProfileEntry;
 pub use edgeless_core::options::define::{
   PATH_PLUGIN_RESOURCES,
@@ -114,15 +115,19 @@ impl PluginEntry {
 
   pub async fn from_profile(entry: &ProfileEntry) -> anyhow::Result<Vec<Self>> {
     let res_pb = entry.path.join(PATH_PLUGIN_RESOURCES.clone());
-    let mut plugins = vec![];
+    
 
     if !(res_pb.exists() && res_pb.is_dir()) {
       return Err(anyhow!("not found plugin resource in {:#?}", entry));
-    }
-
-    let mut dir= fs::read_dir(res_pb).await?;
+    }   
     
+    Self::scan_dir(res_pb).await
+  }
 
+  #[async_recursion]
+  pub async fn scan_dir(pb: PathBuf) -> anyhow::Result<Vec<Self>> {
+    let mut dir= fs::read_dir(pb).await?;
+    let mut plugins = vec![];
     loop {
       if let Some(d) = dir.next_entry().await? {
         let meta = d.metadata().await?;
@@ -133,6 +138,8 @@ impl PluginEntry {
           if let Some(_) = r.extension {
             plugins.push(r);
           }
+        } else if meta.is_dir() {
+          plugins.append(&mut Self::scan_dir(d.path()).await?);
         }
       } else {
         break;

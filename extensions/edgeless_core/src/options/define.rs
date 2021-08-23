@@ -5,6 +5,10 @@ use regex::Regex;
 lazy_static! {
   pub static ref PATH_OPTIONS: PathBuf = PathBuf::from("Config");
 
+  pub static ref PATH_BIN_7Z: PathBuf = PathBuf::from(".").join("bin").join("7z.exe");
+  pub static ref PATH_BIN_PECMD: PathBuf = PathBuf::from(".").join("bin").join("pecmd.exe");
+  
+  
   pub static ref PATH_OLD_CUSTOM_DISPLAY_RES_OPTIONS: PathBuf = PathBuf::from("分辨率.txt");
 
   pub static ref PATH_CUSTOM_DISPLAY_RES: PathBuf = PATH_OPTIONS.join("分辨率.txt");

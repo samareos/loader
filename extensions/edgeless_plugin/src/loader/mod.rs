@@ -1,7 +1,8 @@
 #![allow(unused_imports)]
 
 use anyhow::anyhow;
-use tokio::fs;
+use tokio::fs::{self, DirEntry};
+use crate::found::localboost::{BoostPluginEntry, BoostRepoEntries, BoostRepoEntry, BoostRepoPluginMap};
 use crate::found::{
   PluginExtension,
   PluginEntry,
@@ -12,6 +13,7 @@ use bindings_pecmd::Pecmd;
 use log::{error, warn, log};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use std::os::windows::prelude::MetadataExt;
 use std::str::FromStr;
 use std::vec;
 use std::{env::var, path::PathBuf};
@@ -93,15 +95,17 @@ pub struct PluginLoadSession<'a> {
 
   pub config: Option<PluginLoadConfig>,
 
+  pub boostrepo: &'a BoostRepoPluginMap<'a>,
+
   pub dest: PathBuf,
   pub release: PathBuf,
-  pub scripts: Vec<PluginEntry>,
+  pub scripts: Vec<PluginScriptEntry>,
   pub depend_files: Vec<PathBuf>,
   pub depend_dirs: Vec<PathBuf>,
 }
 
 impl<'a> PluginLoadSession<'a> {
-  pub fn new(entry: &'a PluginEntry) -> PluginLoadSession<'a> {
+  pub fn new(entry: &'a PluginEntry, repo: &'a BoostRepoPluginMap) -> PluginLoadSession<'a> {
     let target = entry.extension.clone()
       .unwrap_or(PluginExtension::Disabled)
       .into();
@@ -115,12 +119,45 @@ impl<'a> PluginLoadSession<'a> {
       scripts: vec![],
       depend_files: vec![],
       depend_dirs: vec![],
+      boostrepo: repo,
     }
   }
 
-  pub fn config(mut self, config: Option<PluginLoadConfig>) -> Self {
+}
+
+impl<'a> PluginLoadSession<'a> {
+  pub fn with_config(&mut self, config: Option<PluginLoadConfig>) -> &mut Self {
     self.config = config;
     self
+  }
+
+  pub async fn release_as_localboost(&self, entry: &mut BoostRepoEntry, force: bool) -> anyhow::Result<bool> {
+    if let Some(m) = self.boostrepo.get(&self.entry.meta) {
+      if m.contains(entry) || !force {
+        return Ok(false);
+      }
+    }
+
+    let zip = SevenZip::new()?;
+    zip.
+    
+    todo!()
+  }
+
+  pub async fn link_as_localboost(&mut self) -> anyhow::Result<()> {
+    todo!()
+  }
+
+  pub async fn load_as_normal(&mut self) -> anyhow::Result<()> {
+    todo!()
+  }
+
+  pub async fn release_as_normal(&mut self) -> anyhow::Result<()> {
+    todo!()
+  }
+
+  pub async fn load(&mut self) -> anyhow::Result<()> {
+    todo!()
   }
 }
 
@@ -129,7 +166,7 @@ impl<'a> PluginLoadSession<'a> {
 mod tests {
 
   use edgeless_core::found::ProfileEntry;
-  use crate::found::PluginEntry;
+  use crate::found::{PluginEntry, localboost::BoostRepoEntry};
 
   use super::PluginLoadSession;
 
@@ -137,7 +174,15 @@ mod tests {
   async fn it_works() -> anyhow::Result<()> {
     if let Some(profile) = ProfileEntry::find_last().await? {
       let plugins = PluginEntry::from_profile(&profile).await?;
-      let session = plugins.iter().map(PluginLoadSession::new).collect::<Vec<_>>();
+      let lb = BoostRepoEntry::find().await?;
+      let lb = lb.get_plugins();
+      let session = plugins.iter()
+        .map(
+          |v| PluginLoadSession::new(
+            v, 
+            &lb
+          )
+        ).collect::<Vec<_>>();
       println!("{:#?}", session);
     }
 

@@ -16,12 +16,13 @@ use anyhow::anyhow;
 use log::{info, warn, error, debug};
 use tokio::fs;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PluginMetadata {
   pub name: String,
   pub version: String,
   pub author: String,
   pub category: Option<String>,
+  _source: String,
 }
 
 impl PluginMetadata {
@@ -32,14 +33,21 @@ impl PluginMetadata {
     info!("sep len = {}", ul_sep.len());
     if ul_sep.len() < 3 || ul_sep.len() > 4 {
       error!("parse to meta error!");
-      return None;
+      return Some(PluginMetadata {
+        name: String::new(),
+        version: String::new(),
+        author: String::new(),
+        category: None,
+        _source: s.into(),
+      });
     }
     
     let meta = PluginMetadata {
       name: ul_sep[0].to_string(),
       version: ul_sep[1].to_string(),
       author: ul_sep[2].to_string(),
-      category: ul_sep.get(3).map(|s| s.to_string())
+      category: ul_sep.get(3).map(|s| s.to_string()),
+      _source: s.into(),
     };
 
     info!("parsed, meta = {:#?}", meta);
@@ -48,7 +56,35 @@ impl PluginMetadata {
   }
 }
 
-#[derive(Debug, Clone, Copy)]
+impl ToString for PluginMetadata {
+  fn to_string(&self) -> String {
+    if let Some(cate) = &self.category {
+      return format!("{}_{}_{}_{}", &self.name, &self.version, &self.author, cate);
+    } else {
+      return format!("{}_{}_{}", &self.name, &self.version, &self.author);
+    }
+  }
+}
+
+impl AsRef<str> for PluginMetadata {
+  fn as_ref(&self) -> &str {
+      &self._source
+  }
+}
+
+impl AsRef<String> for PluginMetadata {
+  fn as_ref(&self) -> &String {
+      &self._source
+  }
+}
+
+impl Into<String> for PluginMetadata {
+  fn into(self) -> String {
+      return self.to_string();
+  }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PluginExtension {
   Normal,
   Localboost,

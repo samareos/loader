@@ -13,6 +13,8 @@ use super::{
   PluginExtension,
   PluginMetadata,
 };
+use std::collections::HashMap;
+use std::rc::Rc;
 
 use std::path::*;
 use std::ops::{Deref, DerefMut};
@@ -23,6 +25,7 @@ use tokio::fs;
 pub struct BoostPluginEntry {
   pub path: PathBuf,
   pub meta: Option<PluginMetadata>,
+  pub from: PathBuf,
 }
 
 #[derive(Debug, Clone)]
@@ -45,6 +48,12 @@ impl DerefMut for BoostRepoEntry {
   }
 }
 
+impl Into<Vec<BoostPluginEntry>> for BoostRepoEntry {
+  fn into(self) -> Vec<BoostPluginEntry> {
+      self.plugins
+  }
+}
+
 impl Into<ProfileEntry> for BoostRepoEntry {
   fn into(self) -> ProfileEntry {
       self.profile
@@ -52,13 +61,27 @@ impl Into<ProfileEntry> for BoostRepoEntry {
 }
 
 impl BoostRepoEntry {
-  pub async fn new(profile: ProfileEntry) -> anyhow::Result<Self> {
+  pub async fn find() -> anyhow::Result<BoostRepoEntries> {
+    let p = ProfileEntry::find_boostrepo().await?;
+    let mut r = vec![];
+    for i in p {
+      r.push(Self::new(i).await?);
+    }
+
+    Ok(BoostRepoEntries(r))
+  }
+  pub async fn new(profile: ProfileEntry) -> anyhow::Result<BoostRepoEntry> {
     if profile.profile_type == ProfileType::Default {
       return Err(anyhow!("this profile is not a localboost repo"));
     }
 
-    let mut entries = vec![];
+    
     let lb_path = profile.path.join(&PATH_PLUGIN_LB_RESOURCES.as_path());
+
+    let mut entry = Self {
+      profile,
+      plugins: vec![],
+    };
 
     let mut f_iter = fs::read_dir(lb_path).await?;
     
@@ -66,8 +89,9 @@ impl BoostRepoEntry {
       if let Some(f_entry) = f_iter.next_entry().await? {
         let meta = f_entry.metadata().await?;
         if meta.is_dir() {
-          entries.push(BoostPluginEntry {
+          entry.plugins.push(BoostPluginEntry {
             path: f_entry.path(),
+            from: entry.path.to_path_buf(),
             meta: f_entry.path()
               .file_name()
               .map(|s| 
@@ -81,11 +105,61 @@ impl BoostRepoEntry {
     }
 
     Ok(
-      Self {
-        profile,
-        plugins: entries,
-      }
+      entry
     )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct BoostRepoEntries (pub Vec<BoostRepoEntry>);
+impl From<Vec<BoostRepoEntry>> for BoostRepoEntries {
+  fn from(v: Vec<BoostRepoEntry>) -> Self {
+      Self(v)
+  }
+}
+
+impl Deref for BoostRepoEntries {
+  type Target = Vec<BoostRepoEntry>;
+  fn deref(&self) -> &Self::Target {
+      &self.0
+  }
+}
+
+impl DerefMut for BoostRepoEntries {
+  fn deref_mut(&mut self) -> &mut Self::Target {
+      &mut self.0
+  }
+}
+
+impl Into<Vec<BoostRepoEntry>> for BoostRepoEntries {
+  fn into(self) -> Vec<BoostRepoEntry> {
+    self.0
+  }
+}
+
+impl BoostRepoEntries {
+  pub fn get_all_plugins(&self) -> Vec<&BoostPluginEntry> {
+    let mut p = vec![];
+    for i in &self.0 {
+      for i in &i.plugins {
+        p.push(i);
+      }
+    }
+    p
+  }
+}
+
+
+pub type BoostRepoPluginMap<'p> = HashMap<&'p Option<PluginMetadata>, Vec<&'p BoostRepoEntry>>;
+impl BoostRepoEntries {
+  pub fn get_plugins(&self) -> BoostRepoPluginMap {
+    let mut m = HashMap::new();
+    for i in &self.0 {
+      for p in &i.plugins {
+        m.entry(&p.meta).or_insert(vec![]).push(i);
+      }
+    }
+    m
   }
 }
 
@@ -97,11 +171,11 @@ mod tests {
 
   #[tokio::test]
   async fn it_works() -> anyhow::Result<()> {
-    let entries = ProfileEntry::find_boostrepo().await?;
-    if let Some(profile) = entries.last() {
-      let boost = BoostRepoEntry::new(profile.to_owned()).await?;
-      println!("{:#?}", boost);
-    }
+
+    let boost = BoostRepoEntry::find().await?;
+    let p = boost.get_plugins();
+    println!("{:#?}", p);
+    println!("{:#?}", boost);
 
     Ok(())
   }
